@@ -1,0 +1,23 @@
+#ifndef CABOOSE_ERRCODE_H
+#define CABOOSE_ERRCODE_H
+
+#define EBADPRIORITY (-1)
+#define ENOTIDS (-2)
+
+#define EIMPOSSIBLETID (-1)
+#define ETASKNOTEXIST (-2)
+#define EINCOMPLETESEND (-3)
+
+#define ETASKNOTREPLYBLOCKED (-3)
+#define EFULLREPLY (-4)
+
+#define ENAMESERVERINVALID (-1)
+
+#define EINVALIDEVENT (-1)
+#define ECORRUPTVOLATILE (-2)
+#define ECOLLECTVOLATILE (-3)
+
+#define EMSGSZ (-4)
+#define ENOMSGBUFS (-5)
+
+#endif

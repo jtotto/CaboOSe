@@ -1,0 +1,32 @@
+CaboOSe
+=======
+
+CaboOSe is an implementation of Professor Bill Cowan's real-time microkernel
+specification.   The full specification can be found somewhere under
+http://www.cgl.uwaterloo.ca/wmcowan/teaching/cs452/ (he breaks links pretty
+often, just poke around for it)
+
+I originally wrote it with my partner Jacob Carew while taking Waterloo's famous
+CS452 ('the trains course'), as a platform for the course project's model train
+control application.  This project strips all of the platform- and
+application-specific code from our original project, leaving only the
+microkernel proper.
+
+- kernel/ contains the kernel source code.
+- example/ contains a platform implementation for the vexpress-a15 QEMU machine
+  and a trivial application.  To use the kernel, you'll need to provide your own
+  platform implementation.
+
+Run the example with `qemu-system-arm -M vexpress-a15 -cpu cortex-a15 -kernel
+kernel.bin -nographic`.
+
+kernel/caboose/caboose.h defines the user-mode kernel interface.
+kernel/caboose/syscall.h defines the corresponding syscall internals you'll need
+to hook up with your platform implementation.
+
+To be honest, you should probably just use FreeRTOS.  This project exists
+because I needed an RTOS for a Raspberry Pi hobby project and already had (and
+understood) this code.
+
+P.S. if you're a current CS452 student, you should check out my track-simulator
+- it'll probably be a lot more useful to you than this will.

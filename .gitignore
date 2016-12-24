@@ -1,0 +1,6 @@
+*.o
+*.d
+*.swp
+*.elf
+*.map
+.gdbinit
