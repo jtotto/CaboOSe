@@ -1,6 +1,7 @@
 #include "offsets.h"
 
 .global engine
+.global irq_except
 .global software_except
 
 #define SYSTEM_MODE 0b11111
@@ -45,10 +46,8 @@ software_except:
 activate:
     /********* SUPERVISOR ***********/
     bl schedule             /* Find the next task to activate. */
-#if 0
-    tst r0, #0x80000000     /* Did we enter through an IRQ, or an SWI? */
-    bne irq_return          /* => IRQ */
-#endif
+    tst r0, #0x80000000     /* Did we enter through an IRQ, or an SVC? */
+    beq irq_return          /* => IRQ */
 
     /* If we're here, we're returning from SVC. */
     ldmia r0!, { r5 }       /* Load the spsr from the SVC frame into r5. */
@@ -64,4 +63,46 @@ activate:
 
 engine:
     push { fp, lr }
+    b activate
+
+irq_return:
+    cps #IRQ_MODE
+    /********* IRQ ***********/
+    orr r0, #0x80000000     /* Make sp great again. */
+    ldmia r0!, { r1, r2 }   /* Fetch the spsr and lr from the stack. */
+    msr spsr, r1            /* Restore spsr. */
+    mov lr, r2              /* Restore lr (the interrupted instruction). */
+    cps #SYSTEM_MODE
+    /********* SYSTEM ***********/
+    /* Pop what's left of the irqframe. */
+    mov sp, r0
+    ldmia sp!, { r0-r12, lr }
+    cps #IRQ_MODE
+    movs pc, lr
+
+irq_except:
+    /********* IRQ ***********/
+    sub lr, #4                      /* Fix up the link register. */
+    cps #SYSTEM_MODE
+    /********* SYSTEM ***********/
+    stmfd sp!, {r0-r12, lr}         /* Save r0-r12 and lr on the user stack. */
+
+    cps #IRQ_MODE                   /* Back to IRQ mode to get the SPSR and link
+                                     * register. */
+    /********* IRQ ***********/
+    mrs r0, spsr
+    mov r1, lr
+    cps #SYSTEM_MODE                /* Back to system mode to stack them. */
+    /********* SYSTEM ***********/
+    stmfd sp!, { r0, r1 }           /* Actually save them. */
+    bic sp, #0x80000000             /* Clear the most significant bit of sp so
+                                     * that we remember we need to resume an
+                                     * irqframe rather than a trapframe (system
+                                     * memory starts from 0x80000000 so this bit
+                                     * can safely be abused). */
+    save_sp r0 sp                   /* Save sp to the active task. */
+
+    cps #SVC_MODE
+    /********* SUPERVISOR ***********/
+    bl irq_service
     b activate

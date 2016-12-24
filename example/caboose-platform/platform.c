@@ -3,7 +3,9 @@
 #include <caboose/syscall.h>
 
 #include "frames.h"
+#include "irq.h"
 #include "syscalltable.h"
+#include "timer.h"
 
 extern uint8_t bss_start;
 extern uint8_t bss_end;
@@ -16,13 +18,26 @@ static void sys_Unimplemented(void)
     ASSERT(false);
 }
 
+/* We exploit AAPCS to simplify our syscall mechanism, leaving the argument
+ * registers untouched during the system call context switch so that all of the
+ * arguments are where they need to be when we blx to the kernel's
+ * implementation.  However, since there are only 4 argument registers we need
+ * to provide a little manual shim for Send(), which takes 5 arguments. */
+static int sys_SendShim(tid_t tid, void *msg, int msglen, void *reply)
+{
+    /* The fifth argument is buried under the svcframe. */
+    struct task *active = caboose.tasks.active;
+    int replylen = *(int *)(active->sp + sizeof(struct svcframe));
+    return sys_Send(tid, msg, msglen, reply, replylen);
+}
+
 void *syscalls[] = {
     [SYSCALL_CREATE] = sys_Create,
     [SYSCALL_MYTID] = sys_MyTid,
     [SYSCALL_MYPARENTTID] = sys_MyParentTid,
     [SYSCALL_PASS] = sys_Pass,
     [SYSCALL_EXIT] = sys_Exit,
-    [SYSCALL_SEND] = sys_Send,
+    [SYSCALL_SEND] = sys_SendShim,
     [SYSCALL_RECEIVE] = sys_Receive,
     [SYSCALL_REPLY] = sys_Reply,
     [SYSCALL_ASYNC_SEND] = sys_AsyncSend,
@@ -36,6 +51,9 @@ void platform_init(uint8_t *pool)
 {
     /* Clear the bss section. */
     memset(&bss_start, 0, &bss_end - &bss_start);
+
+    pool = irq_init(pool);
+    pool = timer_init(pool);
 
     /* Hand it over to the generic kernel initialization, which will start the
      * scheduler when it's ready. */

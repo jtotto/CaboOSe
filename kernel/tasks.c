@@ -208,7 +208,6 @@ int sys_Send(tid_t tid, void *msg, int msglen, void *reply, int replylen)
         active->state = TASK_STATE_REPLY_BLOCKED;
 
         /* Wake up and requeue partner. */
-        ASSERT(recipient->state == TASK_STATE_SEND_BLOCKED);
         recipient->state = TASK_STATE_READY;
         readyq_enqueue(tasks, recipient);
     } else {

@@ -33,7 +33,7 @@ svc_addr:       .word software_except
 prefetch_addr:  .word dead
 abort_addr:     .word dead
 reserved_addr:  .word dead
-irq_addr:       .word dead
+irq_addr:       .word irq_except
 fiq_addr:       .word dead
 
 dead:
