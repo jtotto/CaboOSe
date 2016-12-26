@@ -28,9 +28,6 @@ int AsyncReceive(tid_t *tid, void *msg, int msglen);
 /* System event notification. */
 int AwaitEvent(int eventid);
 
-void Shutdown();
-void Assert();
-
 /* The name server. */
 #define NAMESERVER_TID 1
 #define MAXNAMESIZE 16
